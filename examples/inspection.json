@@ -1,0 +1,175 @@
+{
+  "schema_version": "1.0",
+  "id": "example-inspection-001",
+  "source_instruction": "Inspect the machined part on workstation 3 for surface defects, log the result, and flag it for rework if a defect is found.",
+  "name": "Post-Machining Visual Inspection - Workstation 3",
+  "entry_node_id": "move_to_workstation_3",
+  "nodes": [
+    {
+      "id": "move_to_workstation_3",
+      "name": "Move to workstation 3",
+      "type": "action",
+      "tools_required": [
+        {
+          "name": "mobile_base"
+        }
+      ],
+      "preconditions": [
+        "robot.idle == true"
+      ],
+      "postconditions": [
+        "robot.at_location == workstation_3"
+      ],
+      "possible_failures": [
+        "timeout"
+      ],
+      "on_failure": [
+        {
+          "on": "timeout",
+          "recovery_node_id": "retry_navigation_ws3",
+          "max_retries": 2
+        }
+      ],
+      "next": [
+        "locate_part"
+      ]
+    },
+    {
+      "id": "locate_part",
+      "name": "Locate machined part on workstation 3",
+      "type": "action",
+      "tools_required": [
+        {
+          "name": "vision_system",
+          "capability": "rgbd_camera"
+        }
+      ],
+      "preconditions": [
+        "robot.at_location == workstation_3"
+      ],
+      "postconditions": [
+        "object.part.location_known == true"
+      ],
+      "possible_failures": [
+        "object_missing"
+      ],
+      "on_failure": [
+        {
+          "on": "object_missing",
+          "recovery_node_id": "rescan_workstation_3",
+          "max_retries": 2
+        }
+      ],
+      "next": [
+        "inspect_surface"
+      ]
+    },
+    {
+      "id": "inspect_surface",
+      "name": "Inspect part surface for defects",
+      "type": "verification",
+      "tools_required": [
+        {
+          "name": "vision_system",
+          "capability": "defect_detector"
+        }
+      ],
+      "preconditions": [
+        "object.part.location_known == true"
+      ],
+      "postconditions": [
+        "object.part.inspection_result_known == true"
+      ],
+      "possible_failures": [
+        "verification_failure",
+        "tool_unavailable"
+      ],
+      "on_failure": [
+        {
+          "on": "verification_failure",
+          "recovery_node_id": "retry_inspection",
+          "max_retries": 2
+        },
+        {
+          "on": "tool_unavailable",
+          "recovery_node_id": "escalate_tool_issue",
+          "max_retries": 1
+        }
+      ],
+      "next": [
+        "log_inspection_result"
+      ]
+    },
+    {
+      "id": "log_inspection_result",
+      "name": "Log inspection result",
+      "type": "action",
+      "preconditions": [
+        "object.part.inspection_result_known == true"
+      ],
+      "postconditions": [
+        "log.inspection_result.recorded == true"
+      ],
+      "next": [
+        "flag_for_rework_if_defect"
+      ]
+    },
+    {
+      "id": "flag_for_rework_if_defect",
+      "name": "Flag part for rework if a defect was found",
+      "type": "action",
+      "preconditions": [
+        "log.inspection_result.recorded == true"
+      ],
+      "postconditions": [
+        "object.part.rework_flag_set == (defect_found == true)"
+      ],
+      "next": []
+    },
+    {
+      "id": "retry_navigation_ws3",
+      "name": "Recovery: retry navigation to workstation 3",
+      "type": "recovery",
+      "tools_required": [
+        {
+          "name": "mobile_base"
+        }
+      ],
+      "recovery_strategy": "retry",
+      "returns_to": "move_to_workstation_3"
+    },
+    {
+      "id": "rescan_workstation_3",
+      "name": "Recovery: rescan workstation 3 for the part",
+      "type": "recovery",
+      "tools_required": [
+        {
+          "name": "vision_system",
+          "capability": "rgbd_camera"
+        }
+      ],
+      "recovery_strategy": "rescan",
+      "returns_to": "locate_part"
+    },
+    {
+      "id": "retry_inspection",
+      "name": "Recovery: retry surface inspection",
+      "type": "recovery",
+      "tools_required": [
+        {
+          "name": "vision_system",
+          "capability": "defect_detector"
+        }
+      ],
+      "recovery_strategy": "retry_with_backoff",
+      "returns_to": "inspect_surface"
+    },
+    {
+      "id": "escalate_tool_issue",
+      "name": "Recovery: escalate defect-detector unavailability to human",
+      "type": "recovery",
+      "recovery_strategy": "escalate_to_human",
+      "returns_to": null
+    }
+  ]
+}

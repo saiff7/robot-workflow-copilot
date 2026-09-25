@@ -1,0 +1,251 @@
+{
+  "schema_version": "1.0",
+  "id": "example-pick-place-001",
+  "source_instruction": "Pick the blue box from shelf A, place it on workstation 2, verify placement, and retry if the object is missing.",
+  "name": "Pick and Place Blue Box - Shelf A to Workstation 2",
+  "entry_node_id": "locate_blue_box",
+  "nodes": [
+    {
+      "id": "locate_blue_box",
+      "name": "Locate blue box on shelf A",
+      "type": "action",
+      "tools_required": [
+        {
+          "name": "vision_system",
+          "capability": "rgbd_camera"
+        }
+      ],
+      "preconditions": [
+        "robot.at_location == shelf_A"
+      ],
+      "postconditions": [
+        "object.blue_box.location_known == true"
+      ],
+      "possible_failures": [
+        "object_missing"
+      ],
+      "on_failure": [
+        {
+          "on": "object_missing",
+          "recovery_node_id": "rescan_shelf_a",
+          "max_retries": 2
+        }
+      ],
+      "next": [
+        "verify_object"
+      ]
+    },
+    {
+      "id": "verify_object",
+      "name": "Verify located object is the blue box",
+      "type": "verification",
+      "tools_required": [
+        {
+          "name": "vision_system",
+          "capability": "object_classifier"
+        }
+      ],
+      "preconditions": [
+        "object.blue_box.location_known == true"
+      ],
+      "postconditions": [
+        "object.blue_box.identity_confirmed == true"
+      ],
+      "possible_failures": [
+        "verification_failure"
+      ],
+      "on_failure": [
+        {
+          "on": "verification_failure",
+          "recovery_node_id": "rescan_shelf_a",
+          "max_retries": 2
+        }
+      ],
+      "next": [
+        "pick_blue_box"
+      ]
+    },
+    {
+      "id": "pick_blue_box",
+      "name": "Pick the blue box",
+      "type": "action",
+      "tools_required": [
+        {
+          "name": "gripper",
+          "capability": "parallel_jaw"
+        }
+      ],
+      "preconditions": [
+        "object.blue_box.identity_confirmed == true"
+      ],
+      "postconditions": [
+        "object.blue_box.grasped == true"
+      ],
+      "possible_failures": [
+        "grasp_failure"
+      ],
+      "on_failure": [
+        {
+          "on": "grasp_failure",
+          "recovery_node_id": "retry_grasp",
+          "max_retries": 3
+        }
+      ],
+      "next": [
+        "move_to_workstation_2"
+      ]
+    },
+    {
+      "id": "move_to_workstation_2",
+      "name": "Move to workstation 2",
+      "type": "action",
+      "tools_required": [
+        {
+          "name": "mobile_base"
+        }
+      ],
+      "preconditions": [
+        "object.blue_box.grasped == true"
+      ],
+      "postconditions": [
+        "robot.at_location == workstation_2"
+      ],
+      "possible_failures": [
+        "timeout"
+      ],
+      "on_failure": [
+        {
+          "on": "timeout",
+          "recovery_node_id": "retry_navigation",
+          "max_retries": 2
+        }
+      ],
+      "next": [
+        "place_blue_box"
+      ]
+    },
+    {
+      "id": "place_blue_box",
+      "name": "Place the blue box on workstation 2",
+      "type": "action",
+      "tools_required": [
+        {
+          "name": "gripper",
+          "capability": "parallel_jaw"
+        }
+      ],
+      "preconditions": [
+        "robot.at_location == workstation_2",
+        "object.blue_box.grasped == true"
+      ],
+      "postconditions": [
+        "object.blue_box.placed == true"
+      ],
+      "possible_failures": [
+        "placement_failure"
+      ],
+      "on_failure": [
+        {
+          "on": "placement_failure",
+          "recovery_node_id": "retry_placement",
+          "max_retries": 2
+        }
+      ],
+      "next": [
+        "verify_placement"
+      ]
+    },
+    {
+      "id": "verify_placement",
+      "name": "Verify placement on workstation 2",
+      "type": "verification",
+      "tools_required": [
+        {
+          "name": "vision_system",
+          "capability": "pose_estimation"
+        }
+      ],
+      "preconditions": [
+        "object.blue_box.placed == true"
+      ],
+      "postconditions": [
+        "object.blue_box.placement_confirmed == true"
+      ],
+      "possible_failures": [
+        "placement_failure",
+        "verification_failure"
+      ],
+      "on_failure": [
+        {
+          "on": "placement_failure",
+          "recovery_node_id": "retry_placement",
+          "max_retries": 2
+        },
+        {
+          "on": "verification_failure",
+          "recovery_node_id": "escalate_placement_check",
+          "max_retries": 1
+        }
+      ],
+      "next": []
+    },
+    {
+      "id": "rescan_shelf_a",
+      "name": "Recovery: rescan shelf A for the object",
+      "type": "recovery",
+      "tools_required": [
+        {
+          "name": "vision_system",
+          "capability": "rgbd_camera"
+        }
+      ],
+      "recovery_strategy": "rescan",
+      "returns_to": "locate_blue_box"
+    },
+    {
+      "id": "retry_grasp",
+      "name": "Recovery: retry grasp with adjusted approach",
+      "type": "recovery",
+      "tools_required": [
+        {
+          "name": "gripper",
+          "capability": "parallel_jaw"
+        }
+      ],
+      "recovery_strategy": "retry_with_backoff",
+      "returns_to": "pick_blue_box"
+    },
+    {
+      "id": "retry_navigation",
+      "name": "Recovery: retry navigation to workstation 2",
+      "type": "recovery",
+      "tools_required": [
+        {
+          "name": "mobile_base"
+        }
+      ],
+      "recovery_strategy": "retry",
+      "returns_to": "move_to_workstation_2"
+    },
+    {
+      "id": "retry_placement",
+      "name": "Recovery: retry placement",
+      "type": "recovery",
+      "tools_required": [
+        {
+          "name": "gripper",
+          "capability": "parallel_jaw"
+        }
+      ],
+      "recovery_strategy": "retry",
+      "returns_to": "place_blue_box"
+    },
+    {
+      "id": "escalate_placement_check",
+      "name": "Recovery: escalate placement verification to human",
+      "type": "recovery",
+      "recovery_strategy": "escalate_to_human",
+      "returns_to": null
+    }
+  ]
+}

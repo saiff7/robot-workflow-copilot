@@ -1,0 +1,22 @@
+
+<!-- FILE: app/dashboard/templates/_run_history.html -->
+<div class="run-history-inner">
+    <h3>Recent runs</h3>
+    {% if runs %}
+    <table class="run-table">
+        <thead><tr><th>run</th><th>status</th><th>recovery</th><th>latency</th></tr></thead>
+        <tbody>
+            {% for r in runs %}
+            <tr>
+                <td><code>{{ r.run_id[:8] }}</code></td>
+                <td><span class="run-status run-status-{{ r.status }}">{{ r.status }}</span></td>
+                <td>{{ r.steps_to_recovery if r.steps_to_recovery is not none else "—" }}</td>
+                <td>{{ r.total_simulated_latency_ms }} ms</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="empty-state-sub">No runs recorded yet.</p>
+    {% endif %}
+</div>

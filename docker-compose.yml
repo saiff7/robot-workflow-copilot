@@ -1,0 +1,32 @@
+# docker-compose.yml
+# Single service, single command: `docker compose up` builds the image (if
+# needed) and starts the FastAPI app on http://localhost:8000. No second
+# service, no reverse proxy, no separate database container - SQLite is a
+# file inside the bind-mounted ./data volume, which is the whole point of
+# choosing SQLite for this project's scope (see README's stack rationale).
+#
+# IMPORTANT: `env_file: .env` is marked `required: false` below so that
+# `docker compose up` works with ZERO manual setup steps even if you never
+# copy .env.example to .env - every setting has a safe default baked into
+# app/config.py (see that file's docstring). Requires Docker Compose v2.24+
+# (Compose Specification's optional env_file support); if you're on an
+# older Compose version and don't have a .env file, either upgrade Compose
+# or `cp .env.example .env` first (an empty/default .env is also valid).
+#
+# Bug caught during build: an earlier draft used the plain-string form
+# `env_file: [.env]`, which makes Compose treat the file as REQUIRED and
+# fail with "Couldn't find env file" on a fresh clone with no .env - the
+# exact opposite of the "zero manual setup steps" requirement. The
+# path/required mapping form below fixes that.
+
+services:
+  robot-workflow-copilot:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+    env_file:
+      - path: .env
+        required: false
+    restart: unless-stopped

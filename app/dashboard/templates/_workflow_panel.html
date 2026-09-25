@@ -1,0 +1,80 @@
+<div class="workflow-meta">
+    <h2>{{ workflow.name }}</h2>
+    <p class="source-instruction">&ldquo;{{ workflow.source_instruction }}&rdquo;</p>
+    <div class="meta-badges">
+        <span class="badge {{ 'badge-fallback' if used_fallback else 'badge-llm' }}">
+            {{ 'Parsed via deterministic fallback' if used_fallback else 'Parsed via Gemini' }}
+        </span>
+        <span class="badge {{ 'badge-valid' if validation.is_valid else 'badge-invalid' }}">
+            {{ 'Structurally valid' if validation.is_valid else 'Validation errors found' }}
+        </span>
+        {% if validation.warnings %}
+        <span class="badge badge-warning">{{ validation.warnings|length }} warning(s)</span>
+        {% endif %}
+    </div>
+    {% if fallback_reason %}
+    <p class="fallback-reason">Fallback reason: {{ fallback_reason }}</p>
+    {% endif %}
+</div>
+
+{% if validation.errors %}
+<div class="validation-errors">
+    <strong>Validation errors:</strong>
+    <ul>
+        {% for issue in validation.errors %}
+        <li><code>{{ issue.code }}</code> &mdash; {{ issue.message }}</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+<div class="graph-view">
+    {% for node in workflow.nodes %}
+    <div class="node-card node-{{ node.type.value }}" id="node-{{ node.id }}">
+        <div class="node-card-header">
+            <span class="node-type-tag node-type-{{ node.type.value }}">{{ node.type.value }}</span>
+            <span class="node-name">{{ node.name }}</span>
+        </div>
+        {% if node.tools_required %}
+        <div class="node-detail">tools: {{ node.tools_required|map(attribute='name')|join(', ') }}</div>
+        {% endif %}
+        {% if node.possible_failures %}
+        <div class="node-detail failure-modes">
+            failure modes:
+            {% for f in node.possible_failures %}<span class="failure-chip">{{ f.value }}</span>{% endfor %}
+        </div>
+        {% endif %}
+        {% if node.next %}
+        <div class="node-arrow">&#8595; next: {{ node.next|join(', ') }}</div>
+        {% endif %}
+        {% if node.recovery_strategy %}
+        <div class="node-detail recovery-strategy">strategy: {{ node.recovery_strategy.value }}{% if node.returns_to %} &rarr; returns to {{ node.returns_to }}{% endif %}</div>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+
+<div class="failure-injector">
+    <h3>Simulate execution</h3>
+    <form hx-post="/ui/simulate" hx-target="#trace-and-log" hx-swap="innerHTML" hx-indicator="#sim-spinner">
+        <label for="failure_node_id">Inject failure at node (optional)</label>
+        <select name="failure_node_id" id="failure_node_id">
+            <option value="">-- no injected failure (happy path) --</option>
+            {% for node in workflow.nodes %}
+                {% if node.possible_failures %}
+                    {% for f in node.possible_failures %}
+                    <option value="{{ node.id }}::{{ f.value }}">{{ node.name }} &mdash; {{ f.value }}</option>
+                    {% endfor %}
+                {% endif %}
+            {% endfor %}
+        </select>
+        <div class="form-row">
+            <button type="submit" class="btn btn-danger">Run simulation</button>
+            <span id="sim-spinner" class="htmx-indicator spinner-text">simulating&hellip;</span>
+        </div>
+    </form>
+</div>
+
+<div id="trace-and-log">
+    {% include "_trace_empty.html" %}
+</div>

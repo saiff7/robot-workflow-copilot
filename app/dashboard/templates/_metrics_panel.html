@@ -1,0 +1,28 @@
+<div class="metrics-panel-inner">
+    <h3>Evaluation metrics <span class="metrics-window">(last {{ metrics.total_runs }} run(s))</span></h3>
+    {% if metrics.total_runs == 0 %}
+    <p class="empty-state-sub">No simulations recorded yet.</p>
+    {% else %}
+    <div class="metrics-grid">
+        <div class="metric-cell">
+            <div class="metric-value">{{ "%.0f"|format(metrics.success_rate * 100) }}%</div>
+            <div class="metric-label">success rate</div>
+        </div>
+        <div class="metric-cell">
+            <div class="metric-value">{{ "%.0f"|format(metrics.recovery_rate * 100) if metrics.recovery_rate is not none else "—" }}{{ "%" if metrics.recovery_rate is not none else "" }}</div>
+            <div class="metric-label">recovery success rate</div>
+        </div>
+        <div class="metric-cell">
+            <div class="metric-value">{{ "%.1f"|format(metrics.mean_steps_to_recovery) if metrics.mean_steps_to_recovery is not none else "—" }}</div>
+            <div class="metric-label">mean steps to recovery</div>
+        </div>
+        <div class="metric-cell">
+            <div class="metric-value">{{ "%.0f"|format(metrics.mean_latency_ms) }} ms</div>
+            <div class="metric-label">mean simulated latency / run</div>
+        </div>
+    </div>
+    <div class="metrics-footer">
+        {{ metrics.completed_runs }} completed &middot; {{ metrics.failed_runs }} failed &middot; {{ metrics.runs_with_recovery_attempt }} attempted recovery
+    </div>
+    {% endif %}
+</div>

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Robot Workflow Copilot</title>
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <header class="app-header">
+        <div class="header-left">
+            <span class="brand">ROBOT WORKFLOW COPILOT</span>
+            <span class="badge badge-simulated">Simulated — no physical hardware involved</span>
+        </div>
+        <div class="header-right">
+            <span class="header-note">Independent concept — not affiliated with or endorsed by Strive Robotics</span>
+        </div>
+    </header>
+
+    <main class="app-main">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="app-footer">
+        <span>schema v1.0 &middot; instruction &rarr; parser &rarr; validator &rarr; simulator &rarr; event log &rarr; dashboard</span>
+    </footer>
+</body>
+</html>

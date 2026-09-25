@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="input-panel">
+    <form hx-post="/ui/generate" hx-target="#workflow-panel" hx-swap="innerHTML" hx-indicator="#generate-spinner">
+        <label for="instruction">Manufacturing instruction (natural language)</label>
+        <textarea id="instruction" name="instruction" rows="2" placeholder="Pick the blue box from shelf A, place it on workstation 2, verify placement, and retry if the object is missing.">{{ default_instruction }}</textarea>
+        <div class="form-row">
+            <button type="submit" class="btn btn-primary">Generate workflow</button>
+            <span id="generate-spinner" class="htmx-indicator spinner-text">parsing&hellip;</span>
+        </div>
+    </form>
+</section>
+
+<section class="workflow-panel" id="workflow-panel">
+    {% include "_workflow_empty.html" %}
+</section>
+
+<section class="lower-grid">
+    <div class="metrics-panel" id="metrics-panel" hx-get="/ui/metrics" hx-trigger="load, every 5s" hx-swap="innerHTML">
+        {% include "_metrics_empty.html" %}
+    </div>
+    <div class="run-history-panel" id="run-history-panel" hx-get="/ui/runs" hx-trigger="load, every 5s" hx-swap="innerHTML">
+        {% include "_run_history_empty.html" %}
+    </div>
+    <div class="log-panel" id="log-panel">
+        {% include "_log_panel_empty.html" %}
+    </div>
+</section>
+{% endblock %}

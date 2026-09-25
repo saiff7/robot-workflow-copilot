@@ -1,0 +1,5 @@
+<div class="log-panel-inner" id="log-panel" hx-swap-oob="true">
+    <h3>Raw log (most recent run)</h3>
+    <pre class="raw-log">{% for t in transitions %}[{{ t.timestamp }}] {{ t.type|upper }} node={{ t.node_id }} :: {{ t.detail }}
+{% endfor %}</pre>
+</div>

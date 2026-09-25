@@ -1,0 +1,22 @@
+<div class="execution-trace">
+    <h3>Execution trace <span class="run-status run-status-{{ result.status.value }}">{{ result.status.value }}</span></h3>
+    <div class="trace-summary">
+        <span>run: <code>{{ result.run_id[:8] }}</code></span>
+        <span>steps: {{ result.transitions|length }}</span>
+        <span>total simulated latency: {{ result.total_simulated_latency_ms }} ms</span>
+        {% if result.steps_to_recovery is not none %}
+        <span class="recovered-tag">recovered in {{ result.steps_to_recovery }} step(s)</span>
+        {% endif %}
+    </div>
+    <ol class="trace-list">
+        {% for t in result.transitions %}
+        <li class="trace-item trace-{{ t.type.value }}">
+            <span class="trace-type">{{ t.type.value }}</span>
+            <span class="trace-node">{{ t.node_name }}</span>
+            <span class="trace-detail">{{ t.detail }}</span>
+            {% if t.failure_mode %}<span class="failure-chip">{{ t.failure_mode.value }}</span>{% endif %}
+        </li>
+        {% endfor %}
+    </ol>
+</div>
+{% include "_log_panel.html" %}
