@@ -1,3 +1,9 @@
+Live Deployment
+This project is deployed on Azure Container Apps (serverless, scale-to-zero) so it can be tried without cloning or running Docker locally:
+
+robot-workflow-copilot.lemonocean-7e650d54.westus.azurecontainerapps.io
+
+The container image is built for linux/amd64, pushed to a private Azure Container Registry, and served through a Container Apps environment with min-replicas: 0 — it deprovisions fully when idle and cold-starts on the next request, so there's no standing compute cost between demos.
 # Robot Workflow Copilot
 
 An independent prototype exploring how natural-language manufacturing instructions could be transformed into structured, validated, and observable robotic workflows.
